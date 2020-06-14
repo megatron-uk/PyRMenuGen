@@ -44,9 +44,10 @@ def help():
 	print("Options:")
 	print("-v --verbose 	Enable extra debug output")
 	print("-d --dir	Directory where your Saturn images and ")
-	print("		RMENU ./01/ directory are located")
+	print("		RMENU ./%s/ directory are located" % settings.RMENU_DIR)
 	print("-s --scan	Scan directories and regenerate the LIST.INI file")
 	print("-i --iso	Create the RMENU .iso file")
+	print("-r --rename	Rename directories to the 001-999 standard")
 	print("")
 	print("Menu Options:")
 	print("--menu-1	Use the traditional RMENU interface")
@@ -56,11 +57,11 @@ def help():
 	print("%s -d /mnt/sd_card -s" % __file__)
 	print("")
 	print("Scans the directories under /mnt/sd_card, generates a LIST.INI file")
-	print("and drops it in to /mnt/sd_card/01/BIN/.")
+	print("and drops it in to /mnt/sd_card/%s/BIN/RMENU" % settings.RMENU_DIR)
 	print("")
 	print("%s -d /mnt/sd_card -i" % __file__)
 	print("")
-	print("Use a pre-existing LIST.INI file found in /mnt/sd_card/01/BIN/")
+	print("Use a pre-existing LIST.INI file found in /mnt/sd_card/%s/BIN/RMENU" % settings.RMENU_DIR)
 	print("and generate the RMENU .iso file.")
 	print("")
 	print("%s -d /mnt/sd_card -s -i" % __file__)
@@ -72,12 +73,13 @@ def decode_options():
 	""" Parse command line options """
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "vhsid:", ["help", "verbose", "scan", "iso", "dir=", "menu-1", "menu-2"])
+		opts, args = getopt.getopt(sys.argv[1:], "vhsird:", ["help", "verbose", "scan", "iso", "dir=", "menu-1", "menu-2", "rename"])
 	except getopt.GetoptError as err:
 		print(str(err))
 		help()
 		sys.exit(2)
 
+	mode_rename = False
 	mode_scan = False
 	mode_iso = False
 	data_dir = None
@@ -91,6 +93,8 @@ def decode_options():
 		elif o in ("-h", "--help"):
 			help()
 			sys.exit()
+		elif o in ("-r", "--rename"):
+			mode_rename = True
 		elif o in ("-s", "--scan"):
 			mode_scan = True
 		elif o in ("-i", "--iso"):
@@ -110,8 +114,8 @@ def decode_options():
 		go = False
 
 	# Check we've selected at least one of the modes
-	if (mode_scan is False) and (mode_iso is False):
-		print("ERROR: You must choose at least one of the [scan] or [iso] options")
+	if (mode_scan is False) and (mode_iso is False) and (mode_rename is False):
+		print("ERROR: You must choose at least one of the [rename], [scan] or [iso] options")
 		go = False
 		
 	if go is False:
@@ -127,7 +131,7 @@ def decode_options():
 	print("")
 	title()
 	print("Dir:		%s" % data_dir)
-	print("RMENU:		%s/01/" % data_dir)
+	print("RMENU:		%s/%s/" % (data_dir, settings.RMENU_DIR))
 	print("Scan mode:	%s" % mode_scan)
 	print("ISO mode:	%s" % mode_iso)
 	print("Menu type:	%s" % mode_menu)
@@ -144,20 +148,19 @@ def decode_options():
 	# Verify that the RMENU folder is present
 	print("")
 	print("Checking for RMENU...")
-	if os.path.isdir(data_dir + "/01/"):
+	if os.path.isdir(data_dir + "/" + settings.RMENU_DIR + "/"):
 		print("- Directory OK")
 	else:
-		print("- ERROR, RMENU directory [%s/01/] does not exist" % data_dir)
+		print("- ERROR, RMENU directory [%s/%s/] does not exist" % (data_dir, settings.RMENU_DIR))
 		sys.exit(2)
 	
 	# Check that all the RMENU files are present
 	found = True
 	for f in settings.RMENU_FILES:
-		if os.path.isfile(data_dir + "/01/BIN/RMENU/" + f):
+		if os.path.isfile(data_dir + "/" + settings.RMENU_DIR + "/BIN/RMENU/" + f):
 			pass
-			#print("- ! 01/BIN/RMENU/%s - OK" % f)
 		else:
-			print("- x 01/BIN/RMENU/%s - missing" % f)
+			print("- x %s/BIN/RMENU/%s - missing" % (settings.RMENU_DIR, f))
 			found = False
 	if found == False:
 		print("- ERROR, One or more RMENU files are missing")
@@ -165,6 +168,45 @@ def decode_options():
 	else:
 		print("- Files OK")
 		
+	##################################
+	#
+	# This is rename mode, any directories found that do
+	# not conform with the 000-999 naming convention
+	# will be renamed to the next available numbered
+	# directory, including any spaces in the sequence.
+	#
+	##################################
+	if mode_rename:
+		print("")
+		print("Finding non-conforming directory names...")
+		dirnumbers = []
+		for d in range(1, 999):
+			d_name = "%03d" % d
+			dirnumbers.append(d_name)
+		master_dirnumbers = dirnumbers.copy()
+		
+		dirs = os.listdir(data_dir)
+		dirs.sort()
+		for d in dirs:
+			# Remove any dirnumbers if they already exist in
+			# the just-ran dir list
+			dirnumbers = list(filter((d).__ne__, dirnumbers))
+		
+		rename_dirs = []
+		for d in dirs:
+			if d in master_dirnumbers:
+				pass
+			else:
+				new_dirname = dirnumbers[0]
+				dirnumbers.pop(0)
+				src_dir = data_dir + "/" + d
+				dst_dir  = data_dir + "/" + new_dirname
+				rename_dirs.append((src_dir, dst_dir))
+		
+		for d in rename_dirs:
+			shutil.move(d[0], d[1])
+		print("- OK")
+			
 	##################################
 	#
 	# This is scan mode - we generate a new LIST.INI at the
@@ -300,36 +342,35 @@ def decode_options():
 			else:
 				pass
 			if image_data:
+				image_data['subdir'] = i['subdir']
 				images.append(image_data)
-		
 		print("- %s image data records extracted" % len(images))
 		
+		# Now do the list
 		print("")
-		print("Generating LIST.INI")
-		c = 2
-		for i in images:
-			#print("%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n" % (i['title'], i['number'], i['region'], i['version'], i['date']))
-			if verbose:
-				print("%3s.title=%s" % (c, i['title']))
-				print("%3s.disc=%s" % (c, i['number']))
-				print("%3s.region=%s" % (c, i['region']))
-				print("%3s.version=%s" % (c, i['version']))
-				print("%3s.date=%s" % (c, i['date']))
-			c += 1
+		print("Generating LIST.INI")		
+		if verbose:
+			for i in images:
+				#print("%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n" % (i['title'], i['number'], i['region'], i['version'], i['date']))
+				print("%s.title=%s" % (i['subdir'], i['title']))
+				print("%s.disc=%s" % (i['subdir'], i['number']))
+				print("%s.region=%s" % (i['subdir'], i['region']))
+				print("%s.version=%s" % (i['subdir'], i['version']))
+				print("%s.date=%s" % (i['subdir'], i['date']))
 			
 		# Write the data out to file
-		f = open(data_dir + "/01/BIN/RMENU/" + settings.LIST_INI, "w")
-		f.write("01.title=RMENU\r\n")
-		f.write("01.disc=1/1\r\n")
-		f.write("01.region=JTUE\r\n")
-		f.write("01.version=v999\r\n")
-		f.write("01.date=99999999\r\n")
+		f = open(data_dir + "/" + settings.RMENU_DIR + "/BIN/RMENU/" + settings.LIST_INI, "w")
+		f.write("001.title=RMENU\r\n")
+		f.write("001.disc=1/1\r\n")
+		f.write("001.region=JTUE\r\n")
+		f.write("001.version=v999\r\n")
+		f.write("001.date=99999999\r\n")
 		for i in images:
-			f.write("%3s.title=%s\r\n" % (c, i['title']))
-			f.write("%3s.disc=%s\r\n" % (c, i['number']))
-			f.write("%3s.region=%s\r\n" % (c, i['region']))
-			f.write("%3s.version=%s\r\n" % (c, i['version']))
-			f.write("%3s.date=%s\r\n" % (c, i['date']))
+			f.write("%s.title=%s\r\n" % (i['subdir'], i['title']))
+			f.write("%s.disc=%s\r\n" % (i['subdir'], i['number']))
+			f.write("%s.region=%s\r\n" % (i['subdir'], i['region']))
+			f.write("%s.version=%s\r\n" % (i['subdir'], i['version']))
+			f.write("%s.date=%s\r\n" % (i['subdir'], i['date']))
 		f.close()
 		print("- OK")
 		
@@ -364,7 +405,7 @@ def decode_options():
 		# Check that we have a LIST.INI
 		print("")
 		print("Checking for %s..." % settings.LIST_INI)
-		if os.path.isfile(data_dir + "/01/BIN/RMENU/%s" % settings.LIST_INI):
+		if os.path.isfile(data_dir + "/" + settings.RMENU_DIR + "/BIN/RMENU/%s" % settings.LIST_INI):
 			print("- OK")
 		else:
 			print("- ERROR, unable to find 01/BIN/RMENU/%s" % settings.LIST_INI)
@@ -375,17 +416,17 @@ def decode_options():
 		print("")
 		print("Copying menu file...")
 		if mode_menu == 1:
-			src = data_dir + "/01/BIN/RMENU/" + settings.RMENU_BIN
+			src = data_dir + "/" + settings.RMENU_DIR + "/BIN/RMENU/" + settings.RMENU_BIN
 		elif mode_menu == 2:
-			src = data_dir + "/01/BIN/RMENU/" + settings.RMENUKAI_BIN
+			src = data_dir + "/" + settings.RMENU_DIR + "/BIN/RMENU/" + settings.RMENUKAI_BIN
 		else:
 			print("- ERROR, invalid valid for menu file")
 			sys.exit(2)
-		shutil.copyfile(src, data_dir + "/01/BIN/RMENU/0.BIN")
+		shutil.copyfile(src, data_dir + "/" + settings.RMENU_DIR + "/BIN/RMENU/0.BIN")
 		print("- Using %s" % src)
 			
 		# Create the ISO file using mkisofs
-		cmd_dir = "cd '%s'; " % (data_dir + "/01/BIN/RMENU") 
+		cmd_dir = "cd '%s'; " % (data_dir + "/" + settings.RMENU_DIR + "/BIN/RMENU") 
 		cmd = settings.MKISOFS
 		cmd_args = """ -sysid 'SEGA SATURN' \
 -V 'RMENU' \
@@ -399,7 +440,7 @@ def decode_options():
 -G 'IP.BIN' \
 -full-iso9660-filenames \
 -input-charset 'iso8859-1' \
--o '%s/01/RMENU.iso' '%s/01/BIN/RMENU' """ % (data_dir, data_dir)
+-o '%s/%s/RMENU.iso' '%s/%s/BIN/RMENU' """ % (data_dir, settings.RMENU_DIR, data_dir, settings.RMENU_DIR)
 		print("")
 		print("Going to run %s..." % settings.MKISOFS)
 		print("- Running [%s %s]" % (cmd, cmd_args))
