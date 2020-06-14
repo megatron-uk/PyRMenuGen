@@ -173,11 +173,18 @@ def decode_options():
 	##################################
 	if mode_scan:
 	
+		# Generate a list of valid directory names
+		valid_subdirs = []
+		for i in range(1,999):
+			v = "%03d" % i
+			valid_subdirs.append(v)
+	
 		##########################################
 		#
 		# Find first level subdirectories
 		#
 		##########################################
+		dir_warnings = False
 		print("")
 		print("Finding subdirs...")
 		data_sub_dirs_tuples = os.listdir(data_dir)
@@ -192,6 +199,9 @@ def decode_options():
 				pass
 			else:
 				# Add the subdir to the list
+				if sd_name not in valid_subdirs:
+					print("- WARNING, %s is not a valid directory name for Rhea/Phoebe" % sd_name)
+					dir_warnings = True
 				data_sub_dirs.append(sd_name)
 		data_sub_dirs.sort()
 		print("- %s subdirs found" % len(data_sub_dirs))
@@ -322,6 +332,16 @@ def decode_options():
 			f.write("%3s.date=%s\r\n" % (c, i['date']))
 		f.close()
 		print("- OK")
+		
+		if dir_warnings:
+			
+			print("WARNING, ")
+			print("WARNING, One or more of your game image directories is not stored in a folder in the range 000-999")
+			print("WARNING, This is unlikely to work with Rhea/Saturn. You are advised to rename your folders to the")
+			print("WARNING, standard naming convention of 01-99, 001-999 or 0001-9999.")
+			print("WARNING, ")
+			print("WARNING, The %s file will NOT be accurate (it uses indexed numbers to identify each image on the card)" % settings.LIST_INI)
+		
 			
 	######################################
 	#
