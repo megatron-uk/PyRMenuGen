@@ -3,9 +3,13 @@ A tool to generate a menu file as used by the Rhea/Phoebe optical drive emulator
 
 ## Status
 
-  * Scanning and extraction of image data for CloneCD (.img) and DiscJuggler (.cdi) working for a number of disc types.
-  * RMENU `list.ini` not yet in place
-  * RMENU `iso` not yet being generated
+  * Scanning and extraction of disc data for CloneCD (.img)
+  * Scanning and extraction of disc data for and DiscJuggler (.cdi) - for several disc type variants
+  * Scanning and extraction of disc data for Alcohol 120% (.mdf) - *Not yet implemented*
+  * Scanning and extraction of disc data for iso/cue (.iso) - *Not yet implemented*
+  * Generation of the RMENU `LIST.INI` file
+  * Can choose to generate an original `RMENU ISO`, or `Rmenu Kai ISO` at runtime
+  * Generates a bootable `ISO` file via a call to mkisofs
 
 ----
 
@@ -46,13 +50,17 @@ There are three possible scenarios at this point:
 
 ### RMENU
 
-If you have unpacked the standard release of RMENU to the './01/' sub directory, then you don't need to do anything else. Simply scanning the directories (via the `--scan` option) and creating the iso (via the `--iso` option) will do everything needed for RMENU to work. Remove the SD card after this, pop it in the Rhea/Phoebe board in the Saturn and it should just work.
+If you have unzipped the standard release of RMENU to the './01/' sub directory, then all you need to do is rename the file `./01/BIN/RMENU/0.BIN` to `./01/BIN/RMENU/RMENU.BIN`. 
+
+Simply scanning the directories (via the `--scan` option) and creating the iso (via the `--iso` option) will do everything needed for RMENU to work and create you a `RMENU.ISO` file in the `./01/` directory. Remove the SD card after this, pop it in the Rhea/Phoebe board in the Saturn and it should just work.
 
 However.....
 
 ### Rmenu Kai
 
-Rmenu Kai is a much improved menu system. It is installed over the top of an unpacked RMENU './01/' sub directory, and only involves replacing the file `./01/BIN/RMENU/01.BIN` with the alternative `01.BIN` code as supplied in the Rmenu Kai zip file.
+Rmenu Kai is a much improved menu system. It is installed over the top of an unpacked RMENU './01/' sub directory, and only involves copying in that projects `0.BIN` file TO `./01/BIN/RMENU/RMENUKAI.BIN` from the Rmenu Kai zip file.
+
+*Note: Rmenu Kai names this file 0.BIN; I suggest it is renamed to RMENUKAI.BIN so that it and the original RMENU code can coexist together. PyRMenuGen can choose to build either at run-time.*
 
 PyRMenuGen works exactly the same way after this, scanning folders and generating the ISO file. Removing the SD card and placing it in the Saturn should then load the alternative menu interface provided by Rmenu Kai instead of the old RMENU system.
 
@@ -60,11 +68,9 @@ But even better....
 
 ### Pseudo Saturn Kai
 
-Pseudo Saturn Kai is replacement firmware for a number of Saturn cartridges. Rather than burning the menu information into a virtual ISO file and loading it from there, Pseudo Saturn Kai can load the `LIST.INI` file directly from `./01/BIN/RMENU/LIST.INI`.
+Pseudo Saturn Kai is replacement firmware for a number of Saturn cartridges. Pseudo Saturn Kai also uses either the RMENU or Rmenu Kai `ISO` file as generated for the two previous options.
 
-This means that you can move things about on your SD card, add/remove content and all you need to do is re-run the PyRMenuGen script to regenerate the `LIST.INI` file, no need to create another ISO file to overwrite the old RMENU image.
-
-Of course Pseudo Saturn Kai has much more features than *just* launching images; cheat code support, save file exporting (if you have a cart that supports it), executable uploading etc.
+Pseudo Saturn Kai has much more features than *just* launching images; cheat code support, save file exporting (if you have a cart that supports it), executable uploading etc. If you have an Action Replay cartridge you should **seriously** consider flashing it with Pseudo Saturn Kai firmware.
 
 ----
 

@@ -30,3 +30,12 @@ DISC_REGION_SIZE = 10
 DISC_VERSION_SIZE = 6
 DISC_NUMBER_SIZE = 3
 DISC_DATE_SIZE = 8
+
+# List of files that should be in the RMENU folder under ./01/BIN/RMENU
+RMENU_BIN = "RMENU.BIN"
+RMENUKAI_BIN = "RMENUKAI.BIN"
+RMENU_FILES = ["0.BIN", "ABS.TXT", "BIB.TXT", "CPY.TXT", "IP.BIN", "Z.BIN"]
+LIST_INI = "LIST.INI"
+
+# Name of the mkisofs executable with which to create the RMENU ISO
+MKISOFS = "mkisofs"

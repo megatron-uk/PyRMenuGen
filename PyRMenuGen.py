@@ -12,6 +12,8 @@ import getopt
 import os
 import re
 import sys
+import shutil
+import subprocess
 import traceback
 
 ################################################
@@ -39,11 +41,16 @@ def help():
 	""" Show command line use """
 
 	title()
+	print("Options:")
 	print("-v --verbose 	Enable extra debug output")
 	print("-d --dir	Directory where your Saturn images and ")
 	print("		RMENU ./01/ directory are located")
 	print("-s --scan	Scan directories and regenerate the LIST.INI file")
 	print("-i --iso	Create the RMENU .iso file")
+	print("")
+	print("Menu Options:")
+	print("--menu-1	Use the traditional RMENU interface")
+	print("--menu-2	Use the replacement Rmenu Kai interface")
 	print("")
 	print("e.g.")
 	print("%s -d /mnt/sd_card -s" % __file__)
@@ -65,7 +72,7 @@ def decode_options():
 	""" Parse command line options """
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "vhsid:", ["help", "verbose", "scan", "iso", "dir="])
+		opts, args = getopt.getopt(sys.argv[1:], "vhsid:", ["help", "verbose", "scan", "iso", "dir=", "menu-1", "menu-2"])
 	except getopt.GetoptError as err:
 		print(str(err))
 		help()
@@ -75,6 +82,7 @@ def decode_options():
 	mode_iso = False
 	data_dir = None
 	verbose = False
+	mode_menu = 1
 	go = True
 	
 	for o, a in opts:
@@ -89,6 +97,10 @@ def decode_options():
 			mode_iso = True
 		elif o in ("-d", "--dir"):
 			data_dir = a
+		elif o in ("--menu-1"):
+			mode_menu = 1
+		elif o in ("--menu-2"):
+			mode_menu = 2
 		else:
 			assert False, "unhandled option"
 
@@ -115,18 +127,44 @@ def decode_options():
 	print("")
 	title()
 	print("Dir:		%s" % data_dir)
+	print("RMENU:		%s/01/" % data_dir)
 	print("Scan mode:	%s" % mode_scan)
 	print("ISO mode:	%s" % mode_iso)
+	print("Menu type:	%s" % mode_menu)
 	
 	# Check that the directory actually exists
 	print("")
 	print("Checking data dir...")
 	if (os.path.isdir(data_dir)):
-		print("- OK")
+		print("- OK")			
 	else:
 		print("- ERROR, data directory [%s] does not exist" % data_dir)
 		sys.exit(2)
 	
+	# Verify that the RMENU folder is present
+	print("")
+	print("Checking for RMENU...")
+	if os.path.isdir(data_dir + "/01/"):
+		print("- Directory OK")
+	else:
+		print("- ERROR, RMENU directory [%s/01/] does not exist" % data_dir)
+		sys.exit(2)
+	
+	# Check that all the RMENU files are present
+	found = True
+	for f in settings.RMENU_FILES:
+		if os.path.isfile(data_dir + "/01/BIN/RMENU/" + f):
+			pass
+			#print("- ! 01/BIN/RMENU/%s - OK" % f)
+		else:
+			print("- x 01/BIN/RMENU/%s - missing" % f)
+			found = False
+	if found == False:
+		print("- ERROR, One or more RMENU files are missing")
+		sys.exit(2)
+	else:
+		print("- Files OK")
+		
 	##################################
 	#
 	# This is scan mode - we generate a new LIST.INI at the
@@ -142,10 +180,10 @@ def decode_options():
 		##########################################
 		print("")
 		print("Finding subdirs...")
-		data_sub_dirs_tuples = os.walk(data_dir)
+		data_sub_dirs_tuples = os.listdir(data_dir)
 		data_sub_dirs = []
 		for sd in data_sub_dirs_tuples:
-			sd_name = sd[0]
+			sd_name = sd
 			# Strip just the directory name off the /really/long/path/where/it/is
 			if '/' in sd_name:
 				sd_name = sd_name.split('/')[-1]
@@ -254,19 +292,19 @@ def decode_options():
 			if image_data:
 				images.append(image_data)
 		
-		print("")
-		print("- %s data extracted" % len(images))
+		print("- %s image data records extracted" % len(images))
 		
 		print("")
 		print("Generating LIST.INI")
 		c = 2
 		for i in images:
 			#print("%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n" % (i['title'], i['number'], i['region'], i['version'], i['date']))
-			print("%3s.title=%s" % (c, i['title']))
-			print("%3s.disc=%s" % (c, i['number']))
-			print("%3s.region=%s" % (c, i['region']))
-			print("%3s.version=%s" % (c, i['version']))
-			print("%3s.date=%s" % (c, i['date']))
+			if verbose:
+				print("%3s.title=%s" % (c, i['title']))
+				print("%3s.disc=%s" % (c, i['number']))
+				print("%3s.region=%s" % (c, i['region']))
+				print("%3s.version=%s" % (c, i['version']))
+				print("%3s.date=%s" % (c, i['date']))
 			c += 1
 			
 	######################################
@@ -277,7 +315,59 @@ def decode_options():
 	#
 	######################################
 	if mode_iso:
-		pass
+		
+		# Check that we have mkisofs
+		print("")
+		print("Checking for mkisofs...")
+		if shutil.which(settings.MKISOFS):
+			print("- OK")
+		else:
+			print("- ERROR, unable to find %s" % settings.MKISOFS)
+			sys.exit(2)
+			
+		# Check that we have a LIST.INI
+		print("")
+		print("Checking for %s..." % settings.LIST_INI)
+		if os.path.isfile(data_dir + "/01/BIN/RMENU/%s" % settings.LIST_INI):
+			print("- OK")
+		else:
+			print("- ERROR, unable to find 01/BIN/RMENU/%s" % settings.LIST_INI)
+			sys.exit(2)
+		
+		
+		# Copy the correct menu file
+		print("")
+		print("Copying menu file...")
+		if mode_menu == 1:
+			src = data_dir + "/01/BIN/RMENU/" + settings.RMENU_BIN
+		elif mode_menu == 2:
+			src = data_dir + "/01/BIN/RMENU/" + settings.RMENUKAI_BIN
+		else:
+			print("- ERROR, invalid valid for menu file")
+			sys.exit(2)
+		shutil.copyfile(src, data_dir + "/01/BIN/RMENU/0.BIN")
+		print("- Using %s" % src)
+			
+		# mkisofs -quiet -sysid "SEGA SATURN" -V "RMENU" -volset "RMENU" -publisher "SEGA ENTERPRISES, LTD." -p "SEGA ENTREPRISES, LTD." -A "RMENU" -abstract "ABS.TXT" -copyright "CPY.TXT" -biblio "BIB.TXT" -G IP.BIN -l -input-charset iso8859-1 -o $CDIR/01/RMENU.iso $CDIR/01/BIN/RMENU/
+		cmd_dir = "cd '%s'; " % (data_dir + "/01/BIN/RMENU") 
+		cmd = settings.MKISOFS
+		cmd_args = """ -sysid 'SEGA SATURN' \
+-V 'RMENU' \
+-volset 'RMENU' \
+-publisher 'SEGA ENTERPRISES, LTD.' \
+-p 'SEGA ENTREPRISES, LTD.' \
+-A 'RMENU' \
+-abstract 'ABS.TXT' \
+-copyright 'CPY.TXT' \
+-biblio 'BIB.TXT' \
+-G 'IP.BIN' \
+-full-iso9660-filenames \
+-input-charset 'iso8859-1' \
+-o '%s/01/RMENU.iso' '%s/01/BIN/RMENU' """ % (data_dir, data_dir)
+		print("")
+		print("Going to run %s..." % settings.MKISOFS)
+		print("- Running [%s %s]" % (cmd, cmd_args))
+		os.system(cmd_dir + cmd + cmd_args)
 	
 if __name__ == "__main__":
     decode_options()
