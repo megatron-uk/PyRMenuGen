@@ -210,7 +210,7 @@ def decode_options():
 		print("Scanning for images...")
 		image_files = []
 		for sd in data_sub_dirs:
-			full_sd_path = data_dir + sd
+			full_sd_path = data_dir + "/" + sd
 			sd_has_image = []
 			
 			# List all the files in this subdir
@@ -307,6 +307,22 @@ def decode_options():
 				print("%3s.date=%s" % (c, i['date']))
 			c += 1
 			
+		# Write the data out to file
+		f = open(data_dir + "/01/BIN/RMENU/" + settings.LIST_INI, "w")
+		f.write("01.title=RMENU\r\n")
+		f.write("01.disc=1/1\r\n")
+		f.write("01.region=JTUE\r\n")
+		f.write("01.version=v999\r\n")
+		f.write("01.date=99999999\r\n")
+		for i in images:
+			f.write("%3s.title=%s\r\n" % (c, i['title']))
+			f.write("%3s.disc=%s\r\n" % (c, i['number']))
+			f.write("%3s.region=%s\r\n" % (c, i['region']))
+			f.write("%3s.version=%s\r\n" % (c, i['version']))
+			f.write("%3s.date=%s\r\n" % (c, i['date']))
+		f.close()
+		print("- OK")
+			
 	######################################
 	#
 	# This is ISO mode, we take an existing LIST.INI file and create
@@ -348,7 +364,7 @@ def decode_options():
 		shutil.copyfile(src, data_dir + "/01/BIN/RMENU/0.BIN")
 		print("- Using %s" % src)
 			
-		# mkisofs -quiet -sysid "SEGA SATURN" -V "RMENU" -volset "RMENU" -publisher "SEGA ENTERPRISES, LTD." -p "SEGA ENTREPRISES, LTD." -A "RMENU" -abstract "ABS.TXT" -copyright "CPY.TXT" -biblio "BIB.TXT" -G IP.BIN -l -input-charset iso8859-1 -o $CDIR/01/RMENU.iso $CDIR/01/BIN/RMENU/
+		# Create the ISO file using mkisofs
 		cmd_dir = "cd '%s'; " % (data_dir + "/01/BIN/RMENU") 
 		cmd = settings.MKISOFS
 		cmd_args = """ -sysid 'SEGA SATURN' \
@@ -368,6 +384,11 @@ def decode_options():
 		print("Going to run %s..." % settings.MKISOFS)
 		print("- Running [%s %s]" % (cmd, cmd_args))
 		os.system(cmd_dir + cmd + cmd_args)
+	
+		# We should check the iso has been created here
+		# TODO
+		
+		# Any further checks...
 	
 if __name__ == "__main__":
     decode_options()
