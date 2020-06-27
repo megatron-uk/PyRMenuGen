@@ -32,7 +32,7 @@ DISC_NUMBER_SIZE = 3
 DISC_DATE_SIZE = 8
 
 # List of files that should be in the RMENU folder under ./01/BIN/RMENU
-RMENU_DIR = "001"
+RMENU_DIR = "01"
 RMENU_BIN = "RMENU.BIN"
 RMENUKAI_BIN = "RMENUKAI.BIN"
 RMENU_FILES = ["0.BIN", "ABS.TXT", "BIB.TXT", "CPY.TXT", "IP.BIN", "Z.BIN"]

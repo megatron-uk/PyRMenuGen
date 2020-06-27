@@ -180,9 +180,12 @@ def decode_options():
 		print("")
 		print("Finding non-conforming directory names...")
 		dirnumbers = []
-		for d in range(1, 999):
-			d_name = "%03d" % d
+		for d in range(1, 99):
+			d_name = "%02d" % d
 			dirnumbers.append(d_name)
+		for d in range(100, 999):
+			d_name = "%03d" % d
+			dirnumbers.append(d_name)	
 		master_dirnumbers = dirnumbers.copy()
 		
 		dirs = os.listdir(data_dir)
@@ -360,11 +363,11 @@ def decode_options():
 			
 		# Write the data out to file
 		f = open(data_dir + "/" + settings.RMENU_DIR + "/BIN/RMENU/" + settings.LIST_INI, "w")
-		f.write("001.title=RMENU\r\n")
-		f.write("001.disc=1/1\r\n")
-		f.write("001.region=JTUE\r\n")
-		f.write("001.version=v999\r\n")
-		f.write("001.date=99999999\r\n")
+		f.write("01.title=RMENU\r\n")
+		f.write("01.disc=1/1\r\n")
+		f.write("01.region=JTUE\r\n")
+		f.write("01.version=v999\r\n")
+		f.write("01.date=99999999\r\n")
 		for i in images:
 			f.write("%s.title=%s\r\n" % (i['subdir'], i['title']))
 			f.write("%s.disc=%s\r\n" % (i['subdir'], i['number']))
