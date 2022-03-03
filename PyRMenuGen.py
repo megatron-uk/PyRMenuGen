@@ -225,6 +225,9 @@ def decode_options():
 		for i in range(1,999):
 			v = "%03d" % i
 			valid_subdirs.append(v)
+			if i < 100:
+				v = "%02d" % i
+				valid_subdirs.append(v)
 	
 		##########################################
 		#
