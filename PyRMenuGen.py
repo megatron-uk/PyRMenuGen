@@ -241,6 +241,11 @@ def decode_options():
 			if sd in SPECIAL_FOLDERS:
 				continue
 
+			# There might be files in the root directory;
+			# don't add these to the list
+			if not os.path.isdir(os.path.join(data_dir, sd)):
+				continue
+
 			sd_name = sd
 			# Strip just the directory name off the /really/long/path/where/it/is
 			if '/' in sd_name:
