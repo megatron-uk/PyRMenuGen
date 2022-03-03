@@ -32,6 +32,8 @@ from ccd import dataScraperCCD
 #
 ###############################################################
 
+SPECIAL_FOLDERS = ['.CacheDeleteDiscardedCaches', '.Spotlight-V100', '.Trashes', '.fseventsd',]
+
 def title():
 	print("%s	- RMENU list.ini and .iso generator for the SEGA Saturn" % __file__)
 	print("		Rhea/Phoebe optical drive emulator")
@@ -235,6 +237,10 @@ def decode_options():
 		data_sub_dirs_tuples = os.listdir(data_dir)
 		data_sub_dirs = []
 		for sd in data_sub_dirs_tuples:
+			# OS metadata-related; skip all of these
+			if sd in SPECIAL_FOLDERS:
+				continue
+
 			sd_name = sd
 			# Strip just the directory name off the /really/long/path/where/it/is
 			if '/' in sd_name:
