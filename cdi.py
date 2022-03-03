@@ -56,7 +56,7 @@ def dataScraperCDI(image_data, verbose):
 		f.close()
 		return disc_data
 	else:
-		if cdi_type == 0:
+		if cdi_type == 0 or cdi_type == 2:
 			# Type '0' CDI files have the disc title at +96 bytes
 			BASE_TITLE_OFFSET = 96
 		else:
@@ -78,7 +78,7 @@ def dataScraperCDI(image_data, verbose):
 	# Extract a disc region
 	#
 	####################################
-	if cdi_type == 0:
+	if cdi_type == 0 or cdi_type == 2:
 		# Type '0' CDI files have the disc region at +64 bytes
 		BASE_REGION_OFFSET = 64
 		f.seek(BASE[1] + BASE_REGION_OFFSET, 0)
@@ -101,7 +101,7 @@ def dataScraperCDI(image_data, verbose):
 	# Extract a disc version
 	#
 	####################################
-	if cdi_type == 0:
+	if cdi_type == 0 or cdi_type == 2:
 		# Type '0' CDI files have the disc region at +42 bytes
 		BASE_VERSION_OFFSET = 42
 		f.seek(BASE[1] + BASE_VERSION_OFFSET, 0)
@@ -124,7 +124,7 @@ def dataScraperCDI(image_data, verbose):
 	# Extract a disc date
 	#
 	####################################
-	if cdi_type == 0:
+	if cdi_type == 0 or cdi_type == 2:
 		# Type '0' CDI files have the disc region at +48 bytes
 		BASE_DATE_OFFSET = 48
 		f.seek(BASE[1] + BASE_DATE_OFFSET, 0)
@@ -147,7 +147,7 @@ def dataScraperCDI(image_data, verbose):
 	# Extract a disc number
 	#
 	####################################
-	if cdi_type == 0:
+	if cdi_type == 0 or cdi_type == 2:
 		# Type '0' CDI files have the disc number at +59 bytes
 		BASE_NUMBER_OFFSET = 59
 	else:
