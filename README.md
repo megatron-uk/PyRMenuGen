@@ -5,8 +5,8 @@ A tool to generate a menu file as used by the Rhea/Phoebe optical drive emulator
 
   * Scanning and extraction of disc data for CloneCD (.img)
   * Scanning and extraction of disc data for and DiscJuggler (.cdi) - for several disc type variants
-  * Scanning and extraction of disc data for Alcohol 120% (.mdf) - *Not yet implemented*
-  * Scanning and extraction of disc data for iso/cue (.iso) - *Not yet implemented*
+  * Scanning and extraction of disc data for Alcohol 120% (.mdf)
+  * Scanning and extraction of disc data for iso/cue (.iso)
   * Generation of the RMENU `LIST.INI` file
   * Can choose to generate an original `RMENU ISO`, or `Rmenu Kai ISO` at runtime
   * Generates a bootable `ISO` file via a call to mkisofs

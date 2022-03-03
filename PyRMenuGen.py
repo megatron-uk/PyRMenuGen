@@ -25,6 +25,7 @@ import traceback
 import settings
 from cdi import dataScraperCDI
 from ccd import dataScraperCCD	
+from iso import dataScraperISO
 
 ###############################################################
 #
@@ -338,10 +339,10 @@ def decode_options():
 				image_data = dataScraperCDI(i, verbose)
 			elif i['is_ccd']:
 				image_data = dataScraperCCD(i, verbose)
-			#elif i['is_mdf']:
-			#	image_data = dataScraperMDF(i, verbose)
-			#elif i['is_iso']:
-			#	image_data = dataScraperISO(i, verbose)
+			elif i['is_mdf']:
+				image_data = dataScraperISO(i, verbose, is_mdf=True)
+			elif i['is_iso']:
+				image_data = dataScraperISO(i, verbose)
 			else:
 				pass
 			if image_data:
